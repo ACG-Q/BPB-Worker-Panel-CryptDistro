@@ -1,0 +1,138 @@
+import { getConfigAddresses, generateRemark, randomUpperCase, getRandomPath, base64EncodeUnicode } from './helpers';
+
+export async function getNormalConfigs(isFragment) {
+    const settings = globalThis.settings;
+    let VLConfs = '', TRConfs = '', chainProxy = '';
+    let proxyIndex = 1;
+    const Addresses = await getConfigAddresses(isFragment);
+
+    const buildConfig = (protocol, addr, port, host, sni, remark) => {
+        const isTLS = globalThis.defaultHttpsPorts.includes(port);
+        const security = isTLS ? 'tls' : 'none';
+        const path = `${getRandomPath(16)}${settings.proxyIPs.length ? `/${btoa(settings.proxyIPs.join(','))}` : ''}`;
+        const config = new URL(`${protocol}://config`);
+        let pathPrefix = '';
+
+        if (protocol === 'vless') {
+            config.username = globalThis.userID;
+            config.searchParams.append('encryption', 'none');
+        } else {
+            config.username = globalThis.TRPassword;
+            pathPrefix = 'tr';
+        }
+
+        config.hostname = addr;
+        config.port = port;
+        config.searchParams.append('host', host);
+        config.searchParams.append('type', 'ws');
+        config.searchParams.append('security', security);
+        config.hash = remark;
+
+        if (globalThis.client === 'singbox') {
+            config.searchParams.append('eh', 'Sec-WebSocket-Protocol');
+            config.searchParams.append('ed', '2560');
+            config.searchParams.append('path', `/${pathPrefix}${path}`);
+        } else {
+            config.searchParams.append('path', `/${pathPrefix}${path}?ed=2560`);
+        }
+
+        if (isTLS) {
+            config.searchParams.append('sni', sni);
+            config.searchParams.append('fp', 'randomized');
+            config.searchParams.append('alpn', 'http/1.1');
+
+            if (globalThis.client === 'hiddify-frag') {
+                config.searchParams.append('fragment', `${settings.fragmentLengthMin}-${settings.fragmentLengthMax},${settings.fragmentIntervalMin}-${settings.fragmentIntervalMax},hellotls`);
+            }
+        }
+
+        return config.href;
+    }
+
+    settings.ports.forEach(port => {
+        Addresses.forEach(addr => {
+            const isCustomAddr = settings.customCdnAddrs.includes(addr) && !isFragment;
+            const configType = isCustomAddr ? 'C' : isFragment ? 'F' : '';
+            const sni = isCustomAddr ? settings.customCdnSni : randomUpperCase(globalThis.hostName);
+            const host = isCustomAddr ? settings.customCdnHost : globalThis.hostName;
+
+            const VLRemark = generateRemark(proxyIndex, port, addr, settings.cleanIPs, 'VLESS', configType);
+            const TRRemark = generateRemark(proxyIndex, port, addr, settings.cleanIPs, 'Trojan', configType);
+
+            if (settings.VLConfigs) {
+                const vlessConfig = buildConfig('vless', addr, port, host, sni, VLRemark);
+                VLConfs += `${vlessConfig}\n`;
+            }
+
+            if (settings.TRConfigs) {
+                const trojanConfig = buildConfig('trojan', addr, port, host, sni, TRRemark);
+                TRConfs += `${trojanConfig}\n`;
+            }
+
+            proxyIndex++;
+        });
+    });
+
+    if (settings.outProxy) {
+        let chainRemark = `#${encodeURIComponent('💦 Chain proxy 🔗')}`;
+        if (settings.outProxy.startsWith('socks') || settings.outProxy.startsWith('http')) {
+            const regex = /^(?:socks|http):\/\/([^@]+)@/;
+            const isUserPass = settings.outProxy.match(regex);
+            const userPass = isUserPass ? isUserPass[1] : false;
+            chainProxy = userPass
+                ? settings.outProxy.replace(userPass, btoa(userPass)) + chainRemark
+                : settings.outProxy + chainRemark;
+        } else {
+            chainProxy = settings.outProxy.split('#')[0] + chainRemark;
+        }
+    }
+
+    const configs = btoa(VLConfs + TRConfs + chainProxy);
+    const hiddifyHash = base64EncodeUnicode( isFragment ? '💦 BPB Fragment' : '💦 BPB Normal');
+    
+    return new Response(configs, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'CDN-Cache-Control': 'no-store',
+            'Profile-Title': `base64:${hiddifyHash}`,
+            'DNS': settings.remoteDNS
+        }
+    });
+}
+
+export async function getHiddifyWarpConfigs(isPro) {
+    const settings = globalThis.settings;
+    let configs = '';
+    settings.warpEndpoints.forEach((endpoint, index) => {
+        const config = new URL('warp://config');
+        config.host = endpoint;
+        config.hash = `💦 ${index + 1} - Warp 🇮🇷`;
+
+        if (isPro) {
+            config.searchParams.append('ifpm', settings.hiddifyNoiseMode);
+            config.searchParams.append('ifp', `${settings.noiseCountMin}-${settings.noiseCountMax}`);
+            config.searchParams.append('ifps', `${settings.noiseSizeMin}-${settings.noiseSizeMax}`);
+            config.searchParams.append('ifpd', `${settings.noiseDelayMin}-${settings.noiseDelayMax}`);
+        }
+
+        const detour = new URL('warp://config');
+        detour.host = '162.159.192.1:2408';
+        detour.hash = `💦 ${index + 1} - WoW 🌍`;
+
+        configs += `${config.href}&&detour=${detour.href}\n`;
+    });
+
+    const hiddifyHash = base64EncodeUnicode(`💦 BPB Warp${isPro ? ' Pro' : ''}`);
+    return new Response(btoa(configs), {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'CDN-Cache-Control': 'no-store',
+            'Profile-Title': `base64:${hiddifyHash}`,
+            'DNS': '1.1.1.1'
+        }
+    });
+}
