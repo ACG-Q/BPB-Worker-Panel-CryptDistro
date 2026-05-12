@@ -7,6 +7,8 @@ on:
 
 env:
   TARGET_REPO: bia-pain-bache/BPB-Worker-Panel
+  ENTRY_DIR: src
+  ENTRY_NAME: worker
 
 jobs:
   nightly-build-and-deploy:
@@ -25,8 +27,8 @@ jobs:
           LATEST_COMMIT_ID=$(curl -s https://api.github.com/repos/$TARGET_REPO/commits/main | jq -r '.sha')
           NIGHTLY_BRANCH="night-${LATEST_COMMIT_ID}"
           echo "Latest commit ID from $TARGET_REPO: $LATEST_COMMIT_ID"
-          echo "::set-output name=LATEST_COMMIT_ID::$LATEST_COMMIT_ID"
-          echo "::set-output name=NIGHTLY_BRANCH::$NIGHTLY_BRANCH"
+          echo "LATEST_COMMIT_ID=$LATEST_COMMIT_ID" >> $GITHUB_OUTPUT
+          echo "NIGHTLY_BRANCH=$NIGHTLY_BRANCH" >> $GITHUB_OUTPUT
 
           # 检查是否存在night-<commit id>分支
           BRANCH_EXISTS=$(git ls-remote --heads https://github.com/${{ github.repository }}.git | grep refs/heads/$NIGHTLY_BRANCH || echo "false")
@@ -61,11 +63,24 @@ jobs:
         run: |
           npm install
 
+      # Step 4.5: 动态检测入口文件
+      - name: Detect Entry File
+        id: detect_entry
+        if: github.event_name == 'workflow_dispatch' || env.has_update == 'true'
+        run: |
+          ENTRY_FILE=$(find ${{ env.SOURCE_DIR }}/${{ env.ENTRY_DIR }} -name "${{ env.ENTRY_NAME }}.js" -o -name "${{ env.ENTRY_NAME }}.ts" 2>/dev/null | head -1)
+          if [ -z "$ENTRY_FILE" ]; then
+            echo "Error: Cannot find entry file ${{ env.ENTRY_NAME }}.js or ${{ env.ENTRY_NAME }}.ts in ${{ env.ENTRY_DIR }}"
+            exit 1
+          fi
+          echo "Found entry file: $ENTRY_FILE"
+          echo "ENTRY_FILE=$ENTRY_FILE" >> $GITHUB_OUTPUT
+
       # Step 5: 拉取代码并部署
       - name: Build and Deploy
         if: github.event_name == 'workflow_dispatch' || env.has_update == 'true'
         run: |
-          npx wrangler deploy ${{ env.SOURCE_DIR }}/src/worker.js \
+          npx wrangler deploy ${{ steps.detect_entry.outputs.ENTRY_FILE }} \
             --name bpb-worker-panel \
             --compatibility-flag [nodejs_compat] \
             --compatibility-date 2024-10-26 \
@@ -78,7 +93,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || env.has_update == 'true'
         run: |
           RANDOM_NUMBER=$(od -An -N8 -tu8 < /dev/urandom | awk '{print $1}')
-          echo "::set-output name=RANDOM_NUMBER::$RANDOM_NUMBER"
+          echo "RANDOM_NUMBER=$RANDOM_NUMBER" >> $GITHUB_OUTPUT
           npx javascript-obfuscator dist/worker.js \
             --output dist/worker.obfuscated.js \
             --seed $RANDOM_NUMBER \
