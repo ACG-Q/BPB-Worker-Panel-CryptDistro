@@ -1,44 +1,54 @@
 # BPB-Worker-Panel-CryptDistro
 
-Secure Code Distribution through Encryption and Obfuscation
+<img src="logo.svg" alt="BPB-Worker-Panel-CryptDistro" width="500" />
 
-BPB-Worker-Panel-CryptDistro is a comprehensive solution designed to enhance the security of your code distribution process. This repository serves as a hub for developers seeking to protect their intellectual property and ensure the integrity of their software during the compilation and distribution phases.
+**[中文版](README_zh.md)** | English
+
+### Secure Code Distribution through Encryption and Obfuscation
 
 ## Features
 
 - **Advanced Encryption**: Utilize state-of-the-art encryption techniques to safeguard your code from unauthorized access and tampering.
 - **Obfuscation Capabilities**: Protect your code from reverse engineering, making it difficult for malicious actors to understand or modify your code.
+- **Automated Workflow**: Check for upstream updates daily and automatically build, obfuscate, and publish new releases.
+- **Cloudflare Workers Ready**: Output is optimized for Cloudflare Pages deployment.
 
-# Recommended Deployment Method
+## Recommended Deployment Method
 
-1. Download the Release package.
+1. Download the Release package from GitHub Releases.
 2. Create a new project in Cloudflare Pages.
-3. Upload the distributed zip file (_worker.zip).
+3. Upload the distributed zip file (`_worker.zip`).
 4. Proceed with the deployment.
 
-> For more detailed information, please refer to: Installation (Pages - New recommended method)
+> For more detailed information, please refer to: [Installation (Pages - New recommended method)](https://github.com/bia-pain-bache/BPB-Worker-Panel/blob/main/docs/pages_upload_installation_fa.md)
 
+## Configuration
 
----
+### Environment Variables
 
+The workflow uses the following environment variables that you can customize:
 
-# BPB-Worker-Panel-CryptDistro
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TARGET_REPO` | `bia-pain-bache/BPB-Worker-Panel` | Upstream repository to fetch source code from |
+| `ENTRY_DIR` | `src` | Directory containing the entry file |
+| `ENTRY_NAME` | `worker` | Entry file name without extension |
 
-通过加密和混淆实现安全代码分发
+### Workflows
 
-BPB-Worker-Panel-CryptDistro 是一个全面的解决方案，旨在增强您的代码分发过程的安全性。这个仓库为寻求保护其知识产权并确保软件在编译和分发阶段完整性的开发者提供了一个中心。
+- **`build.yml`**: Daily scheduled build that checks for upstream releases and creates a new release if updates are available.
+- **`build-night.yml`**: Nightly build based on the latest commit, creates pre-release versions.
 
-## 特性
+## Obfuscation Options
 
-- **高级加密**：利用最先进的加密技术保护您的代码免受未授权访问和篡改。
-- **混淆能力**：保护您的代码免受逆向工程的侵害，使得恶意行为者难以理解或修改您的代码。
+The obfuscator configuration (`obfuscator.json`) includes:
 
+- High obfuscation preset
+- String array encoding (RC4 + Base64)
+- Mangled identifier names
+- Dead code injection (50% threshold)
+- Unicode escape sequences
 
-# 推荐部署方法
+## License
 
-1. 下载Release包
-2. 在Cloudflare Pages中创建一个新项目
-3. 上传分发的zip文件(`_worker.zip`)
-4. 进行部署
-
-> 详细信息请参考: [Installation (Pages - New recommended method)](https://github.com/bia-pain-bache/BPB-Worker-Panel/blob/main/docs/pages_upload_installation_fa.md)
+This project is provided for secure code distribution purposes.

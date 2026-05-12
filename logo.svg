@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="160" viewBox="0 0 600 160">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d9ff"/>
+      <stop offset="100%" stop-color="#00ff88"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="600" height="160" rx="16" fill="url(#bg)"/>
+  <rect x="4" y="4" width="592" height="152" rx="14" fill="none" stroke="url(#accent)" stroke-width="2"/>
+  <g filter="url(#glow)">
+    <path d="M60 30 L110 50 L110 95 Q110 130 60 145 Q10 130 10 95 L10 50 Z" fill="url(#accent)" fill-opacity="0.15" stroke="url(#accent)" stroke-width="2"/>
+    <rect x="35" y="85" width="50" height="35" rx="4" fill="url(#accent)"/>
+    <rect x="45" y="70" width="30" height="18" rx="9" fill="none" stroke="url(#accent)" stroke-width="4"/>
+    <circle cx="60" cy="100" r="6" fill="#1a1a2e"/>
+    <rect x="57" y="100" width="6" height="12" fill="#1a1a2e"/>
+  </g>
+  <text x="140" y="65" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white">BPB-Worker-Panel</text>
+  <text x="140" y="100" font-family="Arial, sans-serif" font-size="24" fill="url(#accent)">CryptDistro</text>
+  <text x="140" y="130" font-family="monospace" font-size="14" fill="#888888">&lt;/&gt; Secure Code Distribution through Encryption</text>
+</svg>
